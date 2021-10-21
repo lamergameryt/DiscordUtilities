@@ -1,0 +1,214 @@
+/*
+ * Copyright 2021 Harsh Patil
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.lamergameryt.discordutils.commands;
+
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.privileges.CommandPrivilege;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
+
+/**
+ * <h1><b>Commands in DiscordUtilities</b></h1>
+ *
+ * <p>The internal interface for SlashCommands used in DiscordUtilities.</p>
+ *
+ * <p></p>
+ *
+ * @author Harsh Patil (LamerGamerYT)
+ */
+@SuppressWarnings("unused")
+public abstract class SlashCommand {
+    /**
+     * The name of the slash command.
+     */
+    protected String name = "null";
+
+    /**
+     * The help of the command displayed while the command is being executed.
+     */
+    protected String help = "no help available";
+
+    /**
+     * The options the command accepts.
+     */
+    protected ArrayList<OptionData> options = new ArrayList<>();
+
+    /**
+     * The {@link net.dv8tion.jda.api.Permission Permission}s a Member must have to use this command.
+     * <br>These are only checked in a {@link net.dv8tion.jda.api.entities.Guild Guild} environment.
+     */
+    protected Permission[] userPermissions = new Permission[0];
+
+    /**
+     * The {@link net.dv8tion.jda.api.Permission Permission}s the bot must have to use a command.
+     * <br>These are only checked in a {@link net.dv8tion.jda.api.entities.Guild Guild} environment.
+     */
+    protected Permission[] botPermissions = new Permission[0];
+
+    /**
+     * An {@code int} number of seconds users must wait before using this command again.
+     */
+    protected int cooldown = 0;
+
+    /**
+     * The {@link com.lamergameryt.discordutils.commands.SlashCommand.CooldownScope CooldownScope}
+     * of the command. This defines the scope of a cooldown.
+     * <br>Default {@link com.lamergameryt.discordutils.commands.SlashCommand.CooldownScope#USER CooldownScope.USER}.
+     */
+    protected CooldownScope cooldownScope = CooldownScope.USER;
+
+    /**
+     * The list of {@link net.dv8tion.jda.api.entities.Guild Guilds} the command can be used in.
+     */
+    protected String[] guilds = new String[0];
+
+    protected String[] restrictedUsers = new String[0];
+
+    protected String[] restrictedRoles = new String[0];
+
+    /**
+     * {@code true} if the command should not be registered.
+     * <br/>Default {@code false}
+     */
+    protected boolean skip = false;
+
+    /**
+     * The main body of {@link com.lamergameryt.discordutils.commands.SlashCommand SlashCommand}.
+     * <br/>This is what will be executed when a command is executed.
+     *
+     * @param event The {@link com.lamergameryt.discordutils.commands.CommandEvent CommandEvent} that
+     *              triggered this command.
+     */
+    protected abstract void execute(CommandEvent event);
+
+    public final void run(CommandEvent event) {
+        Guild guild = event.getGuild();
+        Member member = event.getMember();
+        if (guild == null || member == null) return;
+
+
+        if (!guild.getSelfMember().hasPermission(botPermissions)) {
+            event.send("The bot requires the permissions: " +
+                            String.join("," + Arrays.stream(botPermissions).map(Permission::getName)))
+                    .setEphemeral(true).queue();
+            return;
+        }
+
+        if (!event.getMember().hasPermission(userPermissions)) {
+            event.send("You require the permissions: " +
+                            String.join("," + Arrays.stream(botPermissions).map(Permission::getName)))
+                    .setEphemeral(true).queue();
+            return;
+        }
+
+        if (cooldown > 0) {
+            String key = getCooldownKey(event);
+            int remaining = event.getClient().getRemainingCooldown(key);
+            if (remaining > 0) {
+                event.send("The command is on cooldown for " + remaining + " seconds.").setEphemeral(true).queue();
+                return;
+            } else {
+                event.getClient().applyCooldown(key, cooldown);
+            }
+        }
+
+        execute(event);
+    }
+
+    public final String getCooldownKey(CommandEvent event) {
+        switch (cooldownScope) {
+            case USER:
+                return cooldownScope.getKey(name, event.getUser().getId());
+            case USER_GUILD:
+                return cooldownScope.getKey(name, event.getUser().getId(), Objects.requireNonNull(event.getGuild()).getId());
+            case USER_CHANNEL:
+                return cooldownScope.getKey(name, event.getUser().getId(), event.getChannel().getId());
+            case CHANNEL:
+                return cooldownScope.getKey(name, event.getChannel().getId());
+            case GUILD:
+                return cooldownScope.getKey(name, Objects.requireNonNull(event.getGuild()).getId());
+            case GLOBAL:
+                return cooldownScope.getKey(name);
+            default:
+                return "";
+        }
+    }
+
+    public final CommandData getData() {
+        return new CommandData(name, help).addOptions(options);
+    }
+
+    public final void upsertGuild(Guild guild) {
+        CommandData data = new CommandData(name, help);
+        data.addOptions(options);
+
+        guild.upsertCommand(data).queue(command -> {
+            if (restrictedUsers.length == 0 && restrictedRoles.length == 0)
+                return;
+
+            ArrayList<CommandPrivilege> privileges = new ArrayList<>();
+            privileges.add(CommandPrivilege.disable(guild.getPublicRole()));
+
+            for (String restrictedUser : restrictedUsers)
+                privileges.add(CommandPrivilege.enableUser(restrictedUser));
+            for (String restrictedRole : restrictedRoles)
+                privileges.add(CommandPrivilege.enableRole(restrictedRole));
+
+            command.updatePrivileges(guild, privileges).queue();
+        });
+    }
+
+    public boolean isSkip() {
+        return skip;
+    }
+
+    public String[] getGuilds() {
+        return guilds;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public enum CooldownScope {
+        USER("U:%s"),
+        USER_GUILD("U:%s|G:%s"),
+        USER_CHANNEL("U:%s|C:%s"),
+        CHANNEL("C:%s"),
+        GUILD("G:%s"),
+        GLOBAL("global");
+
+        private final String format;
+
+        CooldownScope(String format) {
+            this.format = format;
+        }
+
+        String getKey(String name, Object... ids) {
+            if (this.equals(GLOBAL))
+                return name + "|" + format;
+
+            return name + "|" + String.format(format, ids);
+        }
+    }
+}
