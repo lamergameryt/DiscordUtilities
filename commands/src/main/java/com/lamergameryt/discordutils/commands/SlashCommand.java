@@ -95,6 +95,8 @@ public abstract class SlashCommand {
      */
     protected boolean skip = false;
 
+    protected boolean nsfwOnly = false;
+
     /**
      * The main body of {@link com.lamergameryt.discordutils.commands.SlashCommand SlashCommand}.
      * <br/>This is what will be executed when a command is executed.
@@ -125,27 +127,29 @@ public abstract class SlashCommand {
         }
 
         if (guilds.length != 0) {
-            boolean flag = false;
-            for (String id : restrictedUsers) {
-                if (event.getUser().getId().equals(id)) {
-                    flag = true;
-                    break;
-                }
-            }
-
-            if (!flag) {
-                List<String> roleList = member.getRoles().stream().map(Role::getId).collect(Collectors.toList());
-                for (String id : restrictedRoles) {
-                    if (roleList.contains(id)) {
+            if (restrictedUsers.length != 0 || restrictedRoles.length != 0) {
+                boolean flag = false;
+                for (String id : restrictedUsers) {
+                    if (event.getUser().getId().equals(id)) {
                         flag = true;
                         break;
                     }
                 }
-            }
 
-            if (!flag) {
-                event.send("You cannot use this command!").setEphemeral(true).queue();
-                return;
+                if (!flag) {
+                    List<String> roleList = member.getRoles().stream().map(Role::getId).collect(Collectors.toList());
+                    for (String id : restrictedRoles) {
+                        if (roleList.contains(id)) {
+                            flag = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!flag) {
+                    event.send("You cannot use this command!").setEphemeral(true).queue();
+                    return;
+                }
             }
         }
 
@@ -158,6 +162,11 @@ public abstract class SlashCommand {
             } else {
                 event.getClient().applyCooldown(key, cooldown);
             }
+        }
+
+        if (nsfwOnly && !event.getTextChannel().isNSFW()) {
+            event.send("This command can only be used in a NSFW channel.").setEphemeral(true).queue();
+            return;
         }
 
         execute(event);
