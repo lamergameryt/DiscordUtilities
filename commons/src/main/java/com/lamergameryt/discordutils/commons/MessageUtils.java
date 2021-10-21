@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lamergameryt.discordutils.commands;
+package com.lamergameryt.discordutils.commons;
 
 import java.util.ArrayList;
 

@@ -19,13 +19,16 @@ package com.lamergameryt.discordutils.commands;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.privileges.CommandPrivilege;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * <h1><b>Commands in DiscordUtilities</b></h1>
@@ -119,6 +122,31 @@ public abstract class SlashCommand {
                             String.join("," + Arrays.stream(botPermissions).map(Permission::getName)))
                     .setEphemeral(true).queue();
             return;
+        }
+
+        if (guilds.length != 0) {
+            boolean flag = false;
+            for (String id : restrictedUsers) {
+                if (event.getUser().getId().equals(id)) {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (!flag) {
+                List<String> roleList = member.getRoles().stream().map(Role::getId).collect(Collectors.toList());
+                for (String id : restrictedRoles) {
+                    if (roleList.contains(id)) {
+                        flag = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!flag) {
+                event.send("You cannot use this command!").setEphemeral(true).queue();
+                return;
+            }
         }
 
         if (cooldown > 0) {

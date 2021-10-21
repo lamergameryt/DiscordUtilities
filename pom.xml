@@ -22,7 +22,7 @@
     </modules>
 
     <groupId>com.lamergameryt</groupId>
-    <artifactId>DiscordUtilities</artifactId>
+    <artifactId>discordutilities</artifactId>
     <version>1.0</version>
 
     <properties>
