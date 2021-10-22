@@ -121,7 +121,7 @@ public class CommandClientImpl implements CommandClient, EventListener {
                 command.upsertGuild(g);
             }
 
-            logger.info("The command " + command.getName() + " was loaded successfully.");
+            logger.info("The command '" + command.getName() + "' was loaded successfully.");
         }
 
         action.queue();

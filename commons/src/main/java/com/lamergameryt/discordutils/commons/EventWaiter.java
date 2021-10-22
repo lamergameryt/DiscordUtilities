@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
+import net.dv8tion.jda.internal.utils.Checks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,17 +50,22 @@ public class EventWaiter implements EventListener {
         instantiated = true;
     }
 
-    public boolean isShutdown() {
-        return threadpool.isShutdown();
-    }
-
     public static <T extends GenericEvent> EventWaiterBuilder<T> of(Class<T> eventType) {
         return new EventWaiterBuilder<>(eventType);
+    }
+
+    private static boolean isShutdown() {
+        return threadpool.isShutdown();
     }
 
     public static <T extends GenericEvent> void waitForEvent(Class<T> classType, Predicate<T> condition,
                                                              Consumer<T> action, long timeout, TimeUnit unit,
                                                              Runnable timeoutAction) {
+        Checks.check(!isShutdown(), "Attempted to register a WaitingEvent while the EventWaiter's threadpool was already shut down!");
+        Checks.notNull(classType, "The provided class type");
+        Checks.notNull(condition, "The provided condition predicate");
+        Checks.notNull(action, "The provided action consumer");
+
         WaitingEvent<T> we = new WaitingEvent<>(condition, action);
         Set<WaitingEvent> set = waitingEvents.computeIfAbsent(classType, c -> new HashSet<>());
         set.add(we);

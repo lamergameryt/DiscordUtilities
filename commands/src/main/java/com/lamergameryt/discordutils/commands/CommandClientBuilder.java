@@ -16,6 +16,9 @@
 
 package com.lamergameryt.discordutils.commands;
 
+import com.lamergameryt.discordutils.commands.annotations.BotPermissions;
+import com.lamergameryt.discordutils.commands.annotations.Cooldown;
+import com.lamergameryt.discordutils.commands.annotations.UserPermissions;
 import com.lamergameryt.discordutils.commands.impl.CommandClientImpl;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
@@ -29,7 +32,7 @@ import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class CommandClientBuilder {
     private final Logger logger = JDALogger.getLog(CommandClientBuilder.class);
     private Activity activity = Activity.playing("default");
@@ -75,6 +78,28 @@ public class CommandClientBuilder {
                     try {
                         SlashCommand instance = command.getDeclaredConstructor().newInstance();
                         if (instance.isSkip()) return;
+
+                        Cooldown cooldown = instance.getClass().getAnnotation(Cooldown.class);
+                        if (cooldown != null) {
+                            if (cooldown.duration() != 0)
+                                instance.cooldown = cooldown.duration();
+
+                            if (cooldown.scope() != CooldownScope.USER)
+                                instance.cooldownScope = cooldown.scope();
+                        }
+
+                        BotPermissions botPermissions = instance.getClass().getAnnotation(BotPermissions.class);
+                        if (botPermissions != null) {
+                            if (botPermissions.permissions().length != 0)
+                                instance.botPermissions = botPermissions.permissions();
+                        }
+
+                        UserPermissions userPermissions = instance.getClass().getAnnotation(UserPermissions.class);
+                        if (userPermissions != null) {
+                            if (userPermissions.permissions().length != 0)
+                                instance.userPermissions = userPermissions.permissions();
+                        }
+
                         commands.add(instance);
                     } catch (Exception e) {
                         logger.error("Unable to load command " + command.getName(), e);

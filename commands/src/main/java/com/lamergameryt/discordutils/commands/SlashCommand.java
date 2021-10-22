@@ -74,9 +74,9 @@ public abstract class SlashCommand {
     protected int cooldown = 0;
 
     /**
-     * The {@link com.lamergameryt.discordutils.commands.SlashCommand.CooldownScope CooldownScope}
+     * The {@link com.lamergameryt.discordutils.commands.CooldownScope CooldownScope}
      * of the command. This defines the scope of a cooldown.
-     * <br>Default {@link com.lamergameryt.discordutils.commands.SlashCommand.CooldownScope#USER CooldownScope.USER}.
+     * <br>Default {@link com.lamergameryt.discordutils.commands.CooldownScope#USER CooldownScope.USER}.
      */
     protected CooldownScope cooldownScope = CooldownScope.USER;
 
@@ -85,8 +85,16 @@ public abstract class SlashCommand {
      */
     protected String[] guilds = new String[0];
 
+    /**
+     * The list of users ids who can use the command.
+     * <br/>This is applied only if {@link com.lamergameryt.discordutils.commands.SlashCommand#guilds} is not empty.
+     */
     protected String[] restrictedUsers = new String[0];
 
+    /**
+     * The list of role ids who can use the command.
+     * <br/>This is applied only if {@link com.lamergameryt.discordutils.commands.SlashCommand#guilds} is not empty.
+     */
     protected String[] restrictedRoles = new String[0];
 
     /**
@@ -95,6 +103,10 @@ public abstract class SlashCommand {
      */
     protected boolean skip = false;
 
+    /**
+     * {@code true} if the command can only be used in a NSFW Channel.
+     * <br/>Default {@code false}
+     */
     protected boolean nsfwOnly = false;
 
     /**
@@ -106,6 +118,12 @@ public abstract class SlashCommand {
      */
     protected abstract void execute(CommandEvent event);
 
+    /**
+     * Performs all checks required before executing the command.
+     *
+     * @param event The {@link com.lamergameryt.discordutils.commands.CommandEvent CommandEvent} that
+     *              triggered this command.
+     */
     public final void run(CommandEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -113,15 +131,15 @@ public abstract class SlashCommand {
 
 
         if (!guild.getSelfMember().hasPermission(botPermissions)) {
-            event.send("The bot requires the permissions: " +
-                            String.join("," + Arrays.stream(botPermissions).map(Permission::getName)))
+            event.send("The bot requires the permissions: " + Arrays.stream(botPermissions).map(Permission::getName)
+                            .collect(Collectors.joining(", ")))
                     .setEphemeral(true).queue();
             return;
         }
 
         if (!event.getMember().hasPermission(userPermissions)) {
-            event.send("You require the permissions: " +
-                            String.join("," + Arrays.stream(botPermissions).map(Permission::getName)))
+            event.send("You require the permissions: " + Arrays.stream(userPermissions).map(Permission::getName)
+                            .collect(Collectors.joining(", ")))
                     .setEphemeral(true).queue();
             return;
         }
@@ -172,6 +190,13 @@ public abstract class SlashCommand {
         execute(event);
     }
 
+    /**
+     * Generate a cooldown key based on the
+     * {@link com.lamergameryt.discordutils.commands.CooldownScope CooldownScope} specified.
+     *
+     * @param event The {@link com.lamergameryt.discordutils.commands.CommandEvent} to generate the cooldown key for.
+     * @return The generated cooldown key.
+     */
     private String getCooldownKey(CommandEvent event) {
         switch (cooldownScope) {
             case USER:
@@ -225,27 +250,5 @@ public abstract class SlashCommand {
 
     public String getName() {
         return name;
-    }
-
-    public enum CooldownScope {
-        USER("U:%s"),
-        USER_GUILD("U:%s|G:%s"),
-        USER_CHANNEL("U:%s|C:%s"),
-        CHANNEL("C:%s"),
-        GUILD("G:%s"),
-        GLOBAL("global");
-
-        private final String format;
-
-        CooldownScope(String format) {
-            this.format = format;
-        }
-
-        String getKey(String name, Object... ids) {
-            if (this.equals(GLOBAL))
-                return name + "|" + format;
-
-            return name + "|" + String.format(format, ids);
-        }
     }
 }

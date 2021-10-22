@@ -35,6 +35,7 @@
     <modules>
         <module>commands</module>
         <module>commons</module>
+        <module>examplebot</module>
     </modules>
 
     <groupId>com.lamergameryt</groupId>
