@@ -18,6 +18,7 @@ package com.lamergameryt.discordutils.oauth2;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.lamergameryt.discordutils.oauth2.model.OAuthConnection;
 import com.lamergameryt.discordutils.oauth2.model.OAuthGuild;
 import com.lamergameryt.discordutils.oauth2.model.OAuthUser;
 import org.jsoup.Connection;
@@ -63,7 +64,7 @@ public class DiscordAPI {
         return Arrays.asList(toObject(handleGet("/users/@me/guilds"), OAuthGuild[].class));
     }
 
-    public List<Connection> fetchConnections() throws IOException {
-        return Arrays.asList(toObject(handleGet("/users/@me/connections"), Connection[].class));
+    public List<OAuthConnection> fetchConnections() throws IOException {
+        return Arrays.asList(toObject(handleGet("/users/@me/connections"), OAuthConnection[].class));
     }
 }
