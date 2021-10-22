@@ -172,7 +172,7 @@ public abstract class SlashCommand {
         execute(event);
     }
 
-    public final String getCooldownKey(CommandEvent event) {
+    private String getCooldownKey(CommandEvent event) {
         switch (cooldownScope) {
             case USER:
                 return cooldownScope.getKey(name, event.getUser().getId());

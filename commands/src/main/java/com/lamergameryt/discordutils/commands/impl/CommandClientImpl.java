@@ -27,7 +27,9 @@ import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
+import net.dv8tion.jda.internal.utils.JDALogger;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -38,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 
 public class CommandClientImpl implements CommandClient, EventListener {
+    private final Logger logger = JDALogger.getLog(CommandClientImpl.class);
     private final Activity activity;
     private final OnlineStatus status;
     private final ScheduledExecutorService executor;
@@ -117,6 +120,8 @@ public class CommandClientImpl implements CommandClient, EventListener {
 
                 command.upsertGuild(g);
             }
+
+            logger.info("The command " + command.getName() + " was loaded successfully.");
         }
 
         action.queue();

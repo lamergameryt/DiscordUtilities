@@ -19,7 +19,11 @@ package com.lamergameryt.discordutils.commands;
 import com.lamergameryt.discordutils.commands.impl.CommandClientImpl;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.internal.utils.JDALogger;
+import org.reflections.Reflections;
+import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.concurrent.Executors;
@@ -27,10 +31,12 @@ import java.util.concurrent.ScheduledExecutorService;
 
 @SuppressWarnings("unused")
 public class CommandClientBuilder {
+    private final Logger logger = JDALogger.getLog(CommandClientBuilder.class);
     private Activity activity = Activity.playing("default");
     private OnlineStatus status = OnlineStatus.ONLINE;
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final LinkedList<SlashCommand> commands = new LinkedList<>();
+    private final ArrayList<String> commandPackages = new ArrayList<>();
 
     public CommandClientBuilder setActivity(Activity activity) {
         this.activity = activity;
@@ -57,7 +63,26 @@ public class CommandClientBuilder {
         return this;
     }
 
+    public CommandClientBuilder addCommandPackage(String qualifiedPackage) {
+        this.commandPackages.add(qualifiedPackage);
+        return this;
+    }
+
     public CommandClient build() {
+        for (String qualifiedPackage : commandPackages) {
+            if (qualifiedPackage != null) {
+                new Reflections(qualifiedPackage).getSubTypesOf(SlashCommand.class).forEach(command -> {
+                    try {
+                        SlashCommand instance = command.getDeclaredConstructor().newInstance();
+                        if (instance.isSkip()) return;
+                        commands.add(instance);
+                    } catch (Exception e) {
+                        logger.error("Unable to load command " + command.getName(), e);
+                    }
+                });
+            }
+        }
+
         return new CommandClientImpl(activity, status, executor, commands);
     }
 }
