@@ -35,7 +35,8 @@
     <modules>
         <module>commands</module>
         <module>commons</module>
-        <module>examplebot</module>
+        <module>examples</module>
+        <module>oauth2</module>
     </modules>
 
     <groupId>com.lamergameryt</groupId>

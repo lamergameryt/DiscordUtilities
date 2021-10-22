@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lamergameryt.examplebot.commands;
+package com.lamergameryt.discordutils.examplebot.commands;
 
 import com.lamergameryt.discordutils.commands.CommandEvent;
 import com.lamergameryt.discordutils.commands.CooldownScope;

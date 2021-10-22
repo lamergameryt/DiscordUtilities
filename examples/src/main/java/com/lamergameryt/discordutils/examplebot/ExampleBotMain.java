@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.lamergameryt.examplebot;
+package com.lamergameryt.discordutils.examplebot;
 
 import com.lamergameryt.discordutils.commands.CommandClientBuilder;
 import com.lamergameryt.discordutils.commons.EventWaiter;
@@ -30,7 +30,7 @@ public class ExampleBotMain {
         builder.setActivity(Activity.watching("DiscordUtilites Example"));
         builder.setStatus(OnlineStatus.IDLE);
 
-        builder.addCommandPackage("com.lamergameryt.examplebot.commands");
+        builder.addCommandPackage("com.lamergameryt.discordutils.examplebot.commands");
 
         try {
             JDABuilder.createDefault(System.getenv("BOT_TOKEN"))
