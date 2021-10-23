@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class CommandClientBuilder {
     private final Logger logger = JDALogger.getLog(CommandClientBuilder.class);
+    private boolean sync = true;
     private Activity activity = Activity.playing("default");
     private OnlineStatus status = OnlineStatus.ONLINE;
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -68,6 +69,11 @@ public class CommandClientBuilder {
 
     public CommandClientBuilder addCommandPackage(String qualifiedPackage) {
         this.commandPackages.add(qualifiedPackage);
+        return this;
+    }
+
+    public CommandClientBuilder syncCommands(boolean sync) {
+        this.sync = sync;
         return this;
     }
 
@@ -108,6 +114,6 @@ public class CommandClientBuilder {
             }
         }
 
-        return new CommandClientImpl(activity, status, executor, commands);
+        return new CommandClientImpl(activity, status, executor, commands, sync);
     }
 }

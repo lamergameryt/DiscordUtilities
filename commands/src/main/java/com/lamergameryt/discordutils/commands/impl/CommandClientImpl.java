@@ -26,7 +26,6 @@ import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
-import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.dv8tion.jda.internal.utils.JDALogger;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -41,6 +40,7 @@ import java.util.stream.Collectors;
 
 public class CommandClientImpl implements CommandClient, EventListener {
     private final Logger logger = JDALogger.getLog(CommandClientImpl.class);
+    private final boolean sync;
     private final Activity activity;
     private final OnlineStatus status;
     private final ScheduledExecutorService executor;
@@ -48,11 +48,12 @@ public class CommandClientImpl implements CommandClient, EventListener {
     private final HashMap<String, OffsetDateTime> cooldowns = new HashMap<>();
 
     public CommandClientImpl(Activity activity, OnlineStatus status, ScheduledExecutorService executor,
-                             LinkedList<SlashCommand> commands) {
+                             LinkedList<SlashCommand> commands, boolean sync) {
         this.activity = activity;
         this.status = status;
         this.executor = executor;
         this.commands = commands;
+        this.sync = sync;
     }
 
     @Override
@@ -105,22 +106,24 @@ public class CommandClientImpl implements CommandClient, EventListener {
 
     private void onReady(ReadyEvent event) {
         event.getJDA().getPresence().setPresence(status, activity);
-        for (SlashCommand command : commands) {
-            if (command.isSkip()) continue;
+        if (sync) {
+            for (SlashCommand command : commands) {
+                if (command.isSkip()) continue;
 
-            if (command.getGuilds().length == 0) {
-                event.getJDA().upsertCommand(command.getData()).queue();
-                continue;
+                if (command.getGuilds().length == 0) {
+                    event.getJDA().upsertCommand(command.getData()).queue();
+                    continue;
+                }
+
+                for (String guild : command.getGuilds()) {
+                    Guild g = event.getJDA().getGuildById(guild);
+                    if (g == null) continue;
+
+                    command.upsertGuild(g);
+                }
+
+                logger.info("The command '" + command.getName() + "' was loaded successfully.");
             }
-
-            for (String guild : command.getGuilds()) {
-                Guild g = event.getJDA().getGuildById(guild);
-                if (g == null) continue;
-
-                command.upsertGuild(g);
-            }
-
-            logger.info("The command '" + command.getName() + "' was loaded successfully.");
         }
     }
 
