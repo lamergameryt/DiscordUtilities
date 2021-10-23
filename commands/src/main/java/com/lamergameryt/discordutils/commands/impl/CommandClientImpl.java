@@ -105,12 +105,11 @@ public class CommandClientImpl implements CommandClient, EventListener {
 
     private void onReady(ReadyEvent event) {
         event.getJDA().getPresence().setPresence(status, activity);
-        CommandListUpdateAction action = event.getJDA().updateCommands();
         for (SlashCommand command : commands) {
             if (command.isSkip()) continue;
 
             if (command.getGuilds().length == 0) {
-                action = action.addCommands(command.getData());
+                event.getJDA().upsertCommand(command.getData()).queue();
                 continue;
             }
 
@@ -123,8 +122,6 @@ public class CommandClientImpl implements CommandClient, EventListener {
 
             logger.info("The command '" + command.getName() + "' was loaded successfully.");
         }
-
-        action.queue();
     }
 
     private void onCommand(SlashCommandEvent event) {
