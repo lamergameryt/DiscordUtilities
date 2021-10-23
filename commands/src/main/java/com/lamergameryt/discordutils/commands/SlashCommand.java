@@ -104,6 +104,12 @@ public abstract class SlashCommand {
     protected boolean skip = false;
 
     /**
+     * {@code true} if the command should be synced with every restart.
+     * <br/>Default {@code true}
+     */
+    protected boolean sync = true;
+
+    /**
      * {@code true} if the command can only be used in a NSFW Channel.
      * <br/>Default {@code false}
      */
@@ -242,6 +248,10 @@ public abstract class SlashCommand {
 
     public boolean isSkip() {
         return skip;
+    }
+
+    public boolean isSync() {
+        return sync;
     }
 
     public String[] getGuilds() {
