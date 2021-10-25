@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.privileges.CommandPrivilege;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -226,11 +228,12 @@ public abstract class SlashCommand {
         return new CommandData(name, help).addOptions(options);
     }
 
-    public final void upsertGuild(Guild guild) {
+    public final CompletableFuture<Command> upsertGuild(Guild guild) {
         CommandData data = new CommandData(name, help);
         data.addOptions(options);
 
-        guild.upsertCommand(data).queue(command -> {
+        return guild.upsertCommand(data).submit().whenComplete((command, t) -> {
+            if (t != null) return;
             if (restrictedUsers.length == 0 && restrictedRoles.length == 0)
                 return;
 

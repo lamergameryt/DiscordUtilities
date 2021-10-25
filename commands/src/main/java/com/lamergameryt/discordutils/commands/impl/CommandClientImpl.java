@@ -115,18 +115,30 @@ public class CommandClientImpl implements CommandClient, EventListener {
 
                 if (!command.isSync()) continue;
                 if (command.getGuilds().length == 0) {
-                    event.getJDA().upsertCommand(command.getData()).queue();
-                    return;
+                    event.getJDA().upsertCommand(command.getData()).submit().handle((c, t) -> {
+                        if (t != null) {
+                            logger.error("The command '" + command.getName() + "' could not be synced.");
+                        } else {
+                            logger.info("The command '" + command.getName() + "' was synced successfully.");
+                        }
+                        return null;
+                    });
+                    continue;
                 }
 
                 for (String guild : command.getGuilds()) {
                     Guild g = event.getJDA().getGuildById(guild);
                     if (g == null) continue;
 
-                    command.upsertGuild(g);
+                    command.upsertGuild(g).handle((c, t) -> {
+                        if (t != null) {
+                            logger.error("The command '" + command.getName() + "' could not be synced.");
+                        } else {
+                            logger.info("The command '" + command.getName() + "' was synced successfully.");
+                        }
+                        return null;
+                    });
                 }
-
-                logger.info("The command '" + command.getName() + "' was synced successfully.");
             }
         }
     }
