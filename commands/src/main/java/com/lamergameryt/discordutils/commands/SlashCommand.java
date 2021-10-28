@@ -23,12 +23,11 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.privileges.CommandPrivilege;
+import net.dv8tion.jda.api.requests.restaction.CommandCreateAction;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -100,6 +99,11 @@ public abstract class SlashCommand {
     protected String[] restrictedRoles = new String[0];
 
     /**
+     * The list of subcommands present in the command.
+     */
+    protected SlashCommand[] subCommands = new SlashCommand[0];
+
+    /**
      * {@code true} if the command should not be registered.
      * <br/>Default {@code false}
      */
@@ -116,6 +120,11 @@ public abstract class SlashCommand {
      * <br/>Default {@code false}
      */
     protected boolean nsfwOnly = false;
+
+    /**
+     * Unique identifier used for cooldown calculation.
+     */
+    private final String identifier = UUID.randomUUID().toString();
 
     /**
      * The main body of {@link com.lamergameryt.discordutils.commands.SlashCommand SlashCommand}.
@@ -206,6 +215,7 @@ public abstract class SlashCommand {
      * @return The generated cooldown key.
      */
     private String getCooldownKey(CommandEvent event) {
+        String name = this.name + identifier;
         switch (cooldownScope) {
             case USER:
                 return cooldownScope.getKey(name, event.getUser().getId());
@@ -225,14 +235,26 @@ public abstract class SlashCommand {
     }
 
     public final CommandData getData() {
-        return new CommandData(name, help).addOptions(options);
+        CommandData data = new CommandData(name, help);
+        if (subCommands.length == 0) {
+            data.addOptions(options);
+        }
+
+        return data;
     }
 
     public final CompletableFuture<Command> upsertGuild(Guild guild) {
         CommandData data = new CommandData(name, help);
-        data.addOptions(options);
+        if (subCommands.length == 0) {
+            data.addOptions(options);
+        }
 
-        return guild.upsertCommand(data).submit().whenComplete((command, t) -> {
+        CommandCreateAction action = guild.upsertCommand(data);
+        for (SlashCommand subCommand : subCommands) {
+            action = action.addSubcommands(new SubcommandData(subCommand.name, subCommand.help).addOptions(subCommand.options));
+        }
+
+        return action.submit().whenComplete((command, t) -> {
             if (t != null) return;
             if (restrictedUsers.length == 0 && restrictedRoles.length == 0)
                 return;
@@ -263,5 +285,17 @@ public abstract class SlashCommand {
 
     public String getName() {
         return name;
+    }
+
+    public String getHelp() {
+        return help;
+    }
+
+    public ArrayList<OptionData> getOptions() {
+        return options;
+    }
+
+    public SlashCommand[] getSubCommands() {
+        return subCommands;
     }
 }

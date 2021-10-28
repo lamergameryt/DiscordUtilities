@@ -26,6 +26,8 @@ import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.hooks.EventListener;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
+import net.dv8tion.jda.api.requests.restaction.CommandCreateAction;
 import net.dv8tion.jda.internal.utils.JDALogger;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -115,7 +117,12 @@ public class CommandClientImpl implements CommandClient, EventListener {
 
                 if (!command.isSync()) continue;
                 if (command.getGuilds().length == 0) {
-                    event.getJDA().upsertCommand(command.getData()).submit().handle((c, t) -> {
+                    CommandCreateAction action = event.getJDA().upsertCommand(command.getData());
+                    for (SlashCommand subCommand : command.getSubCommands()) {
+                        action = action.addSubcommands(new SubcommandData(subCommand.getName(), subCommand.getHelp()).addOptions(subCommand.getOptions()));
+                    }
+
+                    action.submit().handle((c, t) -> {
                         if (t != null) {
                             logger.error("The command '" + command.getName() + "' could not be synced.");
                         } else {
@@ -132,9 +139,9 @@ public class CommandClientImpl implements CommandClient, EventListener {
 
                     command.upsertGuild(g).handle((c, t) -> {
                         if (t != null) {
-                            logger.error("The command '" + command.getName() + "' could not be synced.");
+                            logger.error("The command '" + command.getName() + "' could not be synced in guild " + g.getId() + ".");
                         } else {
-                            logger.info("The command '" + command.getName() + "' was synced successfully.");
+                            logger.info("The command '" + command.getName() + "' was synced in guild " + g.getId() + ".");
                         }
                         return null;
                     });
@@ -146,8 +153,18 @@ public class CommandClientImpl implements CommandClient, EventListener {
     private void onCommand(SlashCommandEvent event) {
         for (SlashCommand command : commands) {
             if (command.getName().equals(event.getName())) {
-                command.run(new CommandEvent(event, this));
-                break;
+                if (event.getSubcommandName() == null) {
+                    command.run(new CommandEvent(event, this));
+                    break;
+                } else {
+                    String subcommandName = event.getSubcommandName();
+                    for (SlashCommand subCommand : command.getSubCommands()) {
+                        if (subCommand.getName().equals(subcommandName)) {
+                            subCommand.run(new CommandEvent(event, this));
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
