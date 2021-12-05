@@ -33,7 +33,7 @@ public class WaiterCommand extends SlashCommand {
     }
 
     @Override
-    protected void execute(CommandEvent event) {
+    protected boolean execute(CommandEvent event) {
         event.send(event.getUser().getAsMention() + " send your message below!").setEphemeral(true).queue();
         EventWaiter.of(GuildMessageReceivedEvent.class)
                 .withCondition(e -> e.getAuthor().getId().equals(event.getUser().getId()))
@@ -41,5 +41,6 @@ public class WaiterCommand extends SlashCommand {
                 .onTimeout(() -> event.getTextChannel().sendMessage(event.getUser().getAsMention() + " you failed to reply within 10 seconds.").queue())
                 .onAction(e -> e.getChannel().sendMessage("You said: " + e.getMessage().getContentRaw()).queue())
                 .submit();
+        return true;
     }
 }

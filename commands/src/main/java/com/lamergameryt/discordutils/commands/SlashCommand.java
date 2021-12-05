@@ -133,7 +133,7 @@ public abstract class SlashCommand {
      * @param event The {@link com.lamergameryt.discordutils.commands.CommandEvent CommandEvent} that
      *              triggered this command.
      */
-    protected abstract void execute(CommandEvent event);
+    protected abstract boolean execute(CommandEvent event);
 
     /**
      * Performs all checks required before executing the command.
@@ -188,23 +188,22 @@ public abstract class SlashCommand {
             }
         }
 
-        if (cooldown > 0) {
-            String key = getCooldownKey(event);
-            int remaining = event.getClient().getRemainingCooldown(key);
-            if (remaining > 0) {
-                event.send("The command is on cooldown for " + remaining + " seconds.").setEphemeral(true).queue();
-                return;
-            } else {
-                event.getClient().applyCooldown(key, cooldown);
-            }
-        }
-
         if (nsfwOnly && !event.getTextChannel().isNSFW()) {
             event.send("This command can only be used in a NSFW channel.").setEphemeral(true).queue();
             return;
         }
 
-        execute(event);
+        String key = getCooldownKey(event);
+        int remaining = event.getClient().getRemainingCooldown(key);
+        if (cooldown > 0 && remaining > 0) {
+            event.send("The command is on cooldown for " + remaining + " seconds.").setEphemeral(true).queue();
+            return;
+        }
+
+        boolean applyCooldown = execute(event);
+        if (applyCooldown && cooldown > 0 && remaining < 0) {
+            event.getClient().applyCooldown(key, cooldown);
+        }
     }
 
     /**

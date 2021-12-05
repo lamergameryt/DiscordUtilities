@@ -41,7 +41,7 @@
 
     <groupId>com.lamergameryt</groupId>
     <artifactId>discordutilities</artifactId>
-    <version>1.0</version>
+    <version>1.0.0</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -67,7 +67,7 @@
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>4.3.0_335</version>
+            <version>4.4.0_350</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

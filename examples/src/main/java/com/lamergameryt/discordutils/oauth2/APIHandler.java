@@ -30,6 +30,7 @@ public class APIHandler {
             System.out.println("Username: " + user.getFullUsername());
             System.out.println("Avatar: " + user.getAvatar());
             System.out.println("Email: " + user.getEmail());
+            System.out.println("Locale: " + user.getLocale());
         } catch (IOException e) {
             System.out.println("Invalid response was received.");
             e.printStackTrace();

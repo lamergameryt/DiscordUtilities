@@ -31,7 +31,8 @@ public class HelloSubCommand extends SlashCommand {
     }
 
     @Override
-    protected void execute(CommandEvent event) {
+    protected boolean execute(CommandEvent event) {
         event.send("👋").queue();
+        return true;
     }
 }

@@ -38,8 +38,9 @@ public class GreetCommand extends SlashCommand {
     }
 
     @Override
-    protected void execute(CommandEvent event) {
+    protected boolean execute(CommandEvent event) {
         OptionMapping role = event.getOption("role");
         event.sendFormatted("Hello, %s.", role == null ? "world" : role.getAsRole().getName()).queue();
+        return true;
     }
 }

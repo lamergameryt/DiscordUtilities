@@ -33,8 +33,9 @@ public class RestrictedCommand extends SlashCommand {
     }
 
     @Override
-    protected void execute(CommandEvent event) {
+    protected boolean execute(CommandEvent event) {
         event.send("You can use this command as you have the role: <@&900820637248028672>!")
                 .setEphemeral(true).queue();
+        return true;
     }
 }
